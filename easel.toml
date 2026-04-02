@@ -1,0 +1,12 @@
+[project]
+name = "SkiFlee"
+domain = "easel.games/@raysplaceinspace/skiflee"
+
+[authors]
+"u1z.DHAVSGw" = "raysplaceinspace"
+
+[engine]
+edition = 15
+
+[players]
+selfColor="#bb00ff"

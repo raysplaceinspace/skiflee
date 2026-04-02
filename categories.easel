@@ -1,0 +1,4 @@
+pub tangible category Category:Hero
+pub tangible category Category:Checkpoint
+pub tangible category Category:Obstacle
+pub tangible category Category:Enemy

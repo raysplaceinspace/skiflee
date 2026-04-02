@@ -1,0 +1,117 @@
+pub collect World.AllViewpoints
+prop terrain.TerrainTopY = -100
+prop terrain.TerrainBottomY = 100
+
+pub const StartLineY = 10
+
+pub const BoundaryRadius = 100
+pub const TrackRadius = 50
+pub const ZoomRadius = TrackRadius
+
+const TerrainTrailingHeight = 100
+const TerrainLeadingHeight = 100
+
+pub fn terrain.TerrainSystem() {
+    CameraBoundary(left=-BoundaryRadius, top=-TerrainTrailingHeight, right=BoundaryRadius)
+    
+    on Tick {
+        let top = undefined
+        let bottom = undefined
+        for use body in AllViewpoints {
+            let y = body.Pos.Y
+            top = top.Min(y)
+            bottom = bottom.Max(y)
+        }
+        if !(top && bottom) {
+            // No players have spawned yet - so generate terrain around the origin
+            continue
+        }
+
+        TerrainTopY = top - TerrainTrailingHeight
+        TerrainBottomY = TerrainBottomY.Max(bottom + TerrainLeadingHeight)
+    }
+    
+    behavior {
+        await ContinuouslyGenerateTerrain
+    }
+}
+
+await fn terrain.ContinuouslyGenerateTerrain() {
+    const ClearingReductionRate = 0.95
+    const GolemIntervalReductionRate = 0.95
+    
+    let spawnedUpToY = TerrainTopY
+    let previousPoleX = 0
+    let poleNumber = 0
+    let nextPoleY = StartLineY
+    let trackRadius = TrackRadius
+    let clearingRadius = TrackRadius
+    let nextGolemY = 500
+    let golemIntervalY = 300
+    loop {
+        if spawnedUpToY >= TerrainBottomY {
+            await TerrainBottomY
+            continue
+        }
+        let fromY = spawnedUpToY
+        let blockHeight = 50
+        spawnedUpToY += blockHeight
+
+        repeat 10 {
+            Spawn obstacle {
+                use body=obstacle
+                Tree(pos=@(SignedRandomRange(clearingRadius, BoundaryRadius), fromY + Random*blockHeight))
+                DespawnOnceOutOfRange
+            }
+        }
+        clearingRadius *= ClearingReductionRate
+
+        if fromY >= nextPoleY {
+            poleNumber += 1
+            nextPoleY += blockHeight
+
+            if poleNumber == 1 {
+                nextPoleY += blockHeight // start the first pole further down
+                
+                Spawn obstacle {
+                    use body=obstacle
+                    StartingLine(pos=@(0, fromY))
+                    DespawnOnceOutOfRange
+                }
+            } else {
+                let side = poleNumber % 2 == 0 ? 1 : -1
+                let x = (previousPoleX - side * (10 + Random * 15)).Truncate(TrackRadius)
+                previousPoleX = x
+                
+                Spawn flag {
+                    use body=flag
+                    Flag(@(x, fromY), poleNumber=, side=)
+                    DespawnOnceOutOfRange
+                }
+            }
+        }
+
+        if fromY > nextGolemY {
+            nextGolemY = fromY + golemIntervalY
+            golemIntervalY *= GolemIntervalReductionRate
+            Spawn enemy {
+                use body=enemy
+                Golem(pos=@(0.1 * SignedRandom * TrackRadius, fromY))
+                DespawnOnceOutOfRange
+            }
+        }
+    }
+}
+
+fn body.DespawnOnceOutOfRange([terrain]) {
+    use body=this
+    with TerrainTopY {
+        if Pos.Y < TerrainTopY { Expire }
+    }
+}
+
+fn SignedRandomRange(min, max) -> number {
+    let x = SignedRandom * (max - min).Max(0)
+    x += x >= 0 ? min : -min
+    return x
+}

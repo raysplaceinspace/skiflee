@@ -1,0 +1,5 @@
+pub fn obstacle.StartingLine(pos) {
+    use body=obstacle, layer=Layer:Underlay
+    Body(pos=, immovable=true)
+    PolygonSprite(shape=Capsule(radius=0.5, extent=BoundaryRadius), color=#aaa)
+}

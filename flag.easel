@@ -1,0 +1,69 @@
+field hero.LastPoleTouched
+
+field flag.FlagPoleBody
+
+pub fn flag.Flag(pos, poleNumber, side) {
+    use body=flag, layer=Layer:Foreground
+    use radius=0.5, sensorShape=Capsule(extent=3)
+
+    Body(pos=, immovable=true, noRotation=true)
+    PolygonCollider(
+        category=Category:Checkpoint,
+        collideWith=Category:Hero,
+        shape=sensorShape, isSensor=true,
+    )
+    ImageSprite(@shadow.svg, opacity=0.5, radius=2*radius)
+
+    FlagPoleBody = Subspawn {
+        use body=this
+        Body(pos=)
+        ImageSprite(
+            @flag.png,
+            color=#f00,
+            use radius=4*radius,
+            bodyOffset=@(0, -radius),
+            bodyScale=@(-side, 1),
+        )
+    }
+
+    on BeforeCollide that {
+        if that.Category.Overlaps(Category:Hero) {
+            use hero = that, owner=hero.Owner
+            if !LastPoleTouched || poleNumber > LastPoleTouched {
+                LastPoleTouched = poleNumber
+                FlagsAchieved += 1
+                SwingPole(mirror = hero.Pos.X >= Pos.X ? 1 : -1)
+
+                Spawn {
+                    use body=this, layer=Layer:Overlay
+                    Body(pos=hero.Pos, immovable=true)
+
+                    let start = Tick
+                    on Paint {
+                        let age = Tick - start
+                        let proportion = (age / 3s).Clamp(0, 1)
+                        TextSprite("+1", color=proportion.Mix(#0f4, #0840), radius=3, audience=owner, shadow=0.5)
+                        Pos += @(0, -0.1)
+                        
+                        if proportion >= 1 { Expire }
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn flag.SwingPole(mirror=1) {
+    let strength = 1
+    let start = Tick
+    on Paint {
+        let age = Tick - start
+        FlagPoleBody.Heading = mirror * strength * 0.125rev * Sin((age / 0.25s) * 1rev)
+        strength *= 0.95
+
+        if strength < 0.01 && FlagPoleBody.Heading.Abs < 0.01rev {
+            FlagPoleBody.Heading = 0
+            break
+        }
+    }
+}

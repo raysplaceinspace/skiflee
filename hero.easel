@@ -1,0 +1,155 @@
+signal hero.HeroRaiseSkis
+
+pub fn hero.Hero(pos, [owner]) {
+    use body=hero, layer=Layer:Foreground
+    use radius=1, shape=Circle
+
+    Body(pos=, heading=0.25rev)
+    PolygonCollider(category=Category:Hero)
+    
+    TextSprite(PlayerName, color=#000, opacity=0.2, radius=1.5, screenOffset=@(0, 4), noRotation=true)
+
+    ImageSprite(@skis.png, use radius=3*radius, angleOffset=-0.25rev, shadow=0.4)
+    ImageSprite(@shadow.svg, use radius=2*radius, opacity=0.5, noRotation=true)
+
+    on Paint {
+        ImageSprite<skier>(@skier.png, ownerColor=true, use radius=3*radius, noRotation=true, bodyOffset=@(0, -0.75*radius))
+        await Tick(1s)
+        await HeroRaiseSkis
+        ImageSprite<skier>(@skier-up.png, ownerColor=true, use radius=3*radius, noRotation=true, bodyOffset=@(0, -0.75*radius))
+        await Tick(0.3s)
+    }
+
+    on Paint {
+        Streak(radius=0.2, bodyOffset=@(0, -1), color=#aab, fade=1, feather=1, dissipate=1s)
+        Streak(radius=0.2, bodyOffset=@(0, 1), color=#aab, fade=1, feather=1, dissipate=1s)
+    }
+
+    DecaySpeed(0.02)
+    DecayTurnRate
+
+    HeroTouchControls
+
+    on ButtonDown(ArrowDown) {
+        behavior<goDown> on BeforePhysics {
+            Velocity += @(0, 0.1)
+        }
+    }
+    on ButtonUp(ArrowDown) { delete behavior<goDown> }
+
+    on BeforePhysics {
+        if IsButtonDown(ArrowDown) {
+            let yDelta = Heading.Direction.Dot(@(0, 1)).Max(0)
+            Velocity += @(0, yDelta)
+        }
+
+        let xSign = (IsButtonDown(ArrowLeft) ? -1 : 0) + (IsButtonDown(ArrowRight) ? 1 : 0)
+        if xSign != 0 {
+            if Velocity.Y > 0 {
+                Velocity += @(xSign * 0.03 * Velocity.Y, 0)
+            } else {
+                Velocity += @(xSign * 0.2, 0)
+            }
+        }
+    }
+    on ButtonDown(ArrowLeft) { HeroRaiseSkis }
+    on ButtonDown(ArrowRight) { HeroRaiseSkis }
+    on AfterPhysics {
+        MetersAchieved = MetersAchieved.Max((Pos.Y / 5).Round)
+    }
+    on AfterPhysics {
+        if Pos.Y >= StartLineY {
+            CommenceGame
+            break
+        }
+    }
+
+    on BeforeCollide that {
+        if that.Category.Overlaps(Category:Obstacle | Category:Enemy) {
+            Print(audience=Audience:All) {
+                P {
+                    PlayerNameDisplay
+                    " crashed!"
+                }
+            }
+            repeat 10 {
+                Spark(
+                    color=#fff, ownerColor=true,
+                    speed=10,
+                    splatter=1,
+                    luminous=1,
+                    bloom=5, bloomAlpha=1,
+                    dissipate=0.25s,
+                )
+            }
+            Expire
+        } else if that.Category.Overlaps(Category:Hero) {
+            // repel
+            Velocity += 5 * (Pos - that.Pos).Direction
+        }
+    }
+
+    on Paint {
+        if Velocity != @(0,0) {
+            Heading = Velocity.Angle
+        }
+    }
+
+    // Make the camera follow the Y but always keep X=0
+    Spawn {
+        const CameraAdvanceY = 12.5
+        
+        use body=this
+        Body(pos=@(0, hero.Pos.Y + CameraAdvanceY), immovable=true, noRotation=true)
+        Camera(audience=Audience:All, priority=(IsHuman ? 1 : 0), radius=ZoomRadius, transitionRate=0.05)
+        Camera(audience=owner, priority=100, radius=ZoomRadius)
+        give AllViewpoints(this)
+    
+        on Paint {
+            if !hero.Exists {
+                await Tick(0.5s)
+                Expire
+                break
+            }
+            Pos = @(0, hero.Pos.Y + CameraAdvanceY)
+        }
+    }
+
+    with IsPresent {
+        if IsPresent && IsHuman {
+            // under human control
+        } else {
+            await Bot
+            break
+        }
+    }
+}
+
+fn hero.HeroTouchControls([owner]) {
+    use body=hero
+
+    on ButtonDown(Click) {
+        ButtonDown(ArrowDown)
+        behavior<touchControls> on BeforePhysics {
+            let adjust = Velocity.Direction.RotateRight.Dot((Pointer - Pos).Direction)
+    
+            const Sensitivity = 0.1
+            if adjust > Sensitivity {
+                ButtonUp(ArrowRight)
+                ButtonDown(ArrowLeft)
+            } else if adjust < -Sensitivity {
+                ButtonUp(ArrowLeft)
+                ButtonDown(ArrowRight)
+            } else {
+                ButtonUp(ArrowLeft)
+                ButtonUp(ArrowRight)
+            }
+        }
+    }
+    on ButtonUp(Click) {
+        delete behavior<touchControls>
+        ButtonUp(ArrowUp)
+        ButtonUp(ArrowLeft)
+        ButtonUp(ArrowRight)
+    }
+}

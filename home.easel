@@ -1,0 +1,98 @@
+prop World.FetchedLeaderboard
+
+pub page fn owner.HomePage {
+    Toolbar {
+        PartyToggle
+        FlatButton(ShareIntent) {
+            Icon("fa-solid fa-share-alt")
+            " Share"
+        }
+    }
+
+    ToolbarRight {
+        LoginToggle
+    }
+    
+    ContentScreen(expand=false) {
+        VStack(gap=0) {
+            VStack(backgroundColor=#0008, zStack=true) {
+                Blank(height=5)
+                
+                Standout(animate=Animate:Throb) { %(ProjectName) }
+                P { "Sometimes you gotta ski, and sometimes you gotta flee" }
+                
+                Blank(height=1)
+
+                ZUnderlay {
+                    Image(@landing.png, expand=true, cover=true)
+                }
+            }
+    
+            VStack(backgroundColor=#0002, align=Align:Center, vPadding=1) {
+                VStack(gap=0.3) {
+                    P(fontSize=0.8) { "Choose Your Name" }
+                    PlayerNameEditor(width=25)
+                }
+                RaisedButton(Main, backgroundColor=Color:Primary, width=25, fontSize=1.5) { "Play" }
+            }
+        }
+        P(fontSize=0.9, color=#aaa) {
+            "This game was made with "
+            Link("https://easel.games") { "Easel" }
+            " - the beginner-friendly programming language for 2D multiplayer games!"
+        }
+    }
+
+    Content {
+        H2 { "Leaderboard" }
+
+        if !IsUserLoggedIn && BestFlagsAchieved > 0 {
+            ShinyPanel(align=Align:Center, vPadding=0.5, backgroundColor=#f60) {
+                P(fontSize=0.8) {
+                    Icon("fa-solid fa-triangle-exclamation")
+                    " You are not logged in. Unregistered high scores get deleted after 90 days. To keep your score forever, you need to "
+                    Link(LoginIntent) { "login" }
+                    "."
+                }
+            }
+        }
+
+        with FetchedLeaderboard, PlayerName {
+            if FetchedLeaderboard {
+                let foundMyself = false
+                let rank = 1
+                for player in FetchedLeaderboard %%{
+                    let isMe = player.UserId == owner.UserId
+                    if isMe { foundMyself = true }
+                    
+                    ShinyPanel(backgroundColor=isMe ? #f80 : #b0f, vPadding=0.4) {
+                        HStack {
+                            P(fontSize=0.75, color=#eee, width=1.5, align=Align:Center) {
+                                %(rank)
+                            }
+                            P(fontSize=isMe ? 1.5 : 1.2, bold=true) {
+                                PlayerNameDisplay(isMe ? owner : player, color=#fff)
+                            }
+        
+                            Blank(expand=true)
+        
+                            P {
+                                %(player.BestFlagsAchieved + " flags in " + player.BestMetersAchieved + " meters")
+                            }
+                        }
+                    }
+        
+                    rank += 1
+                }
+
+                if FetchedLeaderboard.IsEmpty {
+                    P { "No one on the leaderboard... yet" }
+                }
+            } else {
+                P { "Loading..." }
+            }
+        }
+    }
+    
+    FetchedLeaderboard = await FetchLeaderboard([&BestFlagsAchieved, &BestMetersAchieved])
+}

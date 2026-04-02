@@ -1,0 +1,51 @@
+pub await fn hero.Bot([body, owner]) {
+    while !GameCommenced {
+        await GameCommenced
+    }
+    
+    on Tick {
+        ButtonDown(ArrowDown)
+        await Tick(1s)
+        ButtonUp(ArrowDown)
+    }
+
+    on BeforePhysics {
+        let target = null
+        for candidate in QueryWithinRadius(BoundaryRadius, filter=Category:Checkpoint) {
+            if candidate.Pos.Y <= Pos.Y { continue }
+            if candidate.Pos.Y >= target.Pos.Y { continue }
+            target = candidate
+        }
+
+        let aim = target ? (target.Pos - Pos) : @(0, BoundaryRadius)
+        // Avoid other heroes here to spread the group out
+        let goingToHit, hitDistance = QueryNearestAlongRay(aim, filter=Category:Obstacle | Category:Enemy | Category:Hero, maxDistance=aim.Length+10)
+        if goingToHit {
+            const TestAngleInterval = 0.05rev
+            for i in RangeInclusive(-5, 5) {
+                if i == 0 { continue } // Already tried this
+                let candidateAim = aim.Rotate(i * TestAngleInterval)
+                // Do not avoid other heroes here because they won't kill us and we need to look for real threats
+                let goingToHit, candidateHitDistance = QueryNearestAlongRay(candidateAim, filter=Category:Obstacle | Category:Enemy, maxDistance=hitDistance)
+                if !goingToHit {
+                    aim = candidateAim
+                    hitDistance = candidateHitDistance
+                }
+            }
+        }
+
+        let direction = Velocity.Direction.RotateRight.Dot(aim.Direction)
+
+        let sensitivity = 0.1 * Random
+        if direction > sensitivity {
+            ButtonUp(ArrowRight)
+            ButtonDown(ArrowLeft)
+        } else if direction < -sensitivity {
+            ButtonUp(ArrowLeft)
+            ButtonDown(ArrowRight)
+        } else {
+            ButtonUp(ArrowLeft)
+            ButtonUp(ArrowRight)
+        }
+    }
+}

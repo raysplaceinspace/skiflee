@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg viewBox="0 0 500 150" xmlns="http://www.w3.org/2000/svg">
+    <radialGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#000"/>
+        <stop offset="100%" stop-color="#0000" />
+    </radialGradient>
+    <rect x="0%" y="0%" width="100%" height="100%" fill="url(#gradient)" />
+</svg>

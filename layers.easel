@@ -1,0 +1,4 @@
+pub const Layer:Background = -100
+pub const Layer:Underlay = 10
+pub const Layer:Foreground = 20
+pub const Layer:Overlay = 100

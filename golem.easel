@@ -1,0 +1,21 @@
+pub fn enemy.Golem(pos) {
+    use body=enemy, layer=Layer:Foreground
+    use radius=2
+    
+    Body(pos=, noRotation=true)
+    PolygonCollider(category=Category:Enemy, shape=Circle)
+    ImageSprite(@shadow.svg, radius=2*radius, opacity=0.5)
+    ImageSprite(@golem-*.png, color=#b8f, frameInterval=0.2s, use radius=3*radius, bodyOffset=@(0, -radius))
+
+    DecaySpeed(1)
+
+    on BeforePhysics {
+        let nearest = QueryNearest(filter=Category:Hero)
+        let diff = nearest ? nearest.Pos - Pos : @(0, -BoundaryRadius)
+        ForcefulStep(@(diff.X.Truncate(0.15), diff.Y.Clamp(-0.4, 0.5)))
+    }
+
+    with Tick(1s) {
+        Strobe(growth=0.1, dissipate=0.5s)
+    }
+}

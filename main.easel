@@ -1,0 +1,176 @@
+pub prop owner.FlagsAchieved = 0
+pub prop owner.MetersAchieved = 0
+
+pub accumulator owner.BestFlagsAchieved = 0
+pub accumulator owner.BestMetersAchieved = 0
+
+pub gallery World.ScoreboardRows
+
+const BotNames = ["Molyneux", "Rodriguez", "Halibut", "Weaver", "Vilnius"]
+
+pub game fn World.Main(maxHumanPlayers=10) {
+    Music(@skiflee-theme.mp3, loop=true)
+    SolidBackground(color=#ddd)
+    Vignette(opacity=0.5)
+    ImageSprite(@grain.png, body=@(0,0), radius=10, color=#ddd, opacity=0.4, layer=Layer:Background, repeatX=1000, repeatY=1000)
+
+    ButtonRemap(KeyW, ArrowUp)
+    ButtonRemap(KeyA, ArrowLeft)
+    ButtonRemap(KeyS, ArrowDown)
+    ButtonRemap(KeyD, ArrowRight)
+
+    Toolbar {
+        VolumeToggle
+    }
+
+    Spawn terrain {
+        TerrainSystem
+    }
+
+    SidebarContent {
+        P(fontSize=0.8) {
+            VStack(gap=0.1) {
+                ScoreboardRows
+            }
+        }
+    }
+
+    Spawn {
+        // Before any players have connected, show the same zoom as when playing
+        Camera(@(0,0), radius=ZoomRadius, priority=-100)
+        
+        Content {
+            Panel(backgroundColor=#0004) {
+                H3 { "Waiting for players..." }
+                HStack {
+                    RaisedButton(PressIntent<playVsAi>, backgroundColor=Color:Primary) { "Play vs AI" }
+                    Blank(expand=true)
+                    RoamingToggle
+                }
+            }
+        }
+        once Pressed<playVsAi> { LockGame }
+        once GameLocked { Expire }
+    }
+
+    once GameLocked {
+        if CountPlayers <= 1 {
+            for name in BotNames {
+                SpawnBot(name)
+            }
+        }
+    }
+    
+    once GameCommenced {
+        PrintOverlay(duration=3s) {
+            Standout(animate=Animate:FlyFromTop) { "GO!" }
+        }
+    }
+
+    SpawnEachPlayer owner {
+        Print(audience=Audience:All) {
+            P {
+                PlayerNameDisplay
+                " has arrived"
+            }
+        }
+        TopContent {
+            VStack(align=Align:Center) {
+                H3(margin=0) {
+                    with FlagsAchieved {
+                        %(FlagsAchieved + " flag" + (FlagsAchieved == 1 ? "" : "s"))
+                    }
+                }
+                P {
+                    with MetersAchieved {
+                        %(MetersAchieved + " m")
+                    }
+                }
+            }
+        }
+        
+        await Subspawn hero {
+            use body=hero
+            Hero(pos=@(0.9*SignedRandom*TrackRadius, SignedRandom*10))
+
+            with FlagsAchieved {
+                give ScoreboardRows(order=-FlagsAchieved) {
+                    HStack {
+                        Span { PlayerNameDisplay }
+                        HStack(width=1, align=Align:Right) { %(FlagsAchieved) }
+                    }
+                }
+            }
+            
+            await GameLocked
+            BottomContent<help> {
+                InsetPanel {
+                    P(fontSize=1.2) {
+                        TouchscreenOnly {
+                            Span(bold=true) { "Tap and Hold" }
+                            " to ski!"
+                        }
+                        NonTouchscreenOnly {
+                            "Use "
+                            Span(bold=true) { "WASD" }
+                            " or "
+                            Span(bold=true) { "Arrow Keys" }
+                            " to ski!"
+                        }
+                    }
+                }
+            }
+            while Pos.Y <= StartLineY { await Tick }
+
+            BottomContent<help> {
+                InsetPanel {
+                    P(fontSize=1.2) {
+                        "Touch the "
+                        Span(bold=true) { "flags" }
+                        " to gain points!"
+                    }
+                }
+            }
+            while FlagsAchieved < 5 { await FlagsAchieved }
+            delete BottomContent<help>
+        }
+        
+        give ScoreboardRows(order=-FlagsAchieved) {
+            HStack {
+                Span {
+                    PlayerNameDisplay(color=#aaa)
+                    " (dead)"
+                }
+                HStack(width=1, align=Align:Right) { %(FlagsAchieved) }
+            }
+        }
+
+        let isNewHighScore = false
+        if FlagsAchieved > BestFlagsAchieved {
+            isNewHighScore = true
+            BestFlagsAchieved(showOnLeaderboard=true) = FlagsAchieved
+            BestMetersAchieved = MetersAchieved
+        }
+
+        OverlayContent {
+            VStack(align=Align:Center) {
+                H1 {
+                    FlyInChars("You died!")
+                }
+                VStack {
+                    P { "Distance: " + MetersAchieved + " m" }
+                    P { "You scored: " + FlagsAchieved }
+                }
+                if isNewHighScore {
+                    P(color=#e580ff, bold=true) {
+                        "New high score!"
+                    }
+                }
+                HStack(align=Align:Center) {
+                    RaisedButton(Main, backgroundColor=Color:Primary) { "Play Again" }
+                    RaisedButton(HomePage, backgroundColor=Color:Secondary) { "High Scores" }
+                }
+            }
+        }
+    }
+}

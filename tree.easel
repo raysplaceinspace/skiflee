@@ -1,0 +1,9 @@
+pub fn obstacle.Tree(pos) {
+    use body=obstacle, layer=Layer:Foreground
+    use radius=2+1.5*Random, shape=Circle
+    
+    Body(pos=, immovable=true, noRotation=true)
+    PolygonCollider(category=Category:Obstacle)
+    ImageSprite(@shadow.svg, radius=2*radius, opacity=0.5)
+    ImageSprite(@tree.png, use radius=2*radius, screenOffset=@(0, -0.85*radius))
+}
