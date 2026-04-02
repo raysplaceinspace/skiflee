@@ -134,6 +134,8 @@ pub game fn World.Main(maxHumanPlayers=10) {
             while FlagsAchieved < 5 { await FlagsAchieved }
             delete BottomContent<help>
         }
+
+        Eliminate
         
         give ScoreboardRows(order=-FlagsAchieved) {
             HStack {
@@ -171,6 +173,12 @@ pub game fn World.Main(maxHumanPlayers=10) {
                     RaisedButton(HomePage, backgroundColor=Color:Secondary) { "High Scores" }
                 }
             }
+        }
+    }
+
+    on PlayerEliminated {
+        if QueryAnyPlayer(isEliminated=false) {
+            ConcludeGame
         }
     }
 }
