@@ -68,6 +68,8 @@ pub game fn World.Main(maxHumanPlayers=10) {
     }
 
     SpawnEachPlayer owner {
+        AlreadyPlayed = true
+        
         Print(audience=Audience:All) {
             P {
                 PlayerNameDisplay

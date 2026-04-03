@@ -1,3 +1,5 @@
+pub preference owner.AlreadyPlayed
+
 prop World.FetchedLeaderboard
 
 pub page fn owner.HomePage {
@@ -33,7 +35,7 @@ pub page fn owner.HomePage {
                     P(fontSize=0.8) { "Choose Your Name" }
                     PlayerNameEditor(width=25)
                 }
-                RaisedButton(Main, backgroundColor=Color:Primary, width=25, fontSize=1.5) { "Play" }
+                RaisedButton(Main, autoClick=!AlreadyPlayed, backgroundColor=Color:Primary, width=25, fontSize=1.5) { "Play" }
             }
         }
         P(fontSize=0.9, color=#aaa) {
