@@ -80,6 +80,7 @@ pub fn hero.Hero(pos, [owner]) {
                     luminous=1,
                     bloom=5, bloomAlpha=1,
                     dissipate=0.25s,
+                    layer=Layer:Overlay,
                 )
             }
             Expire
