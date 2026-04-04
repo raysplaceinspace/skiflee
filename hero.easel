@@ -21,8 +21,8 @@ pub fn hero.Hero(pos, [owner]) {
     }
 
     on Paint {
-        Streak(radius=0.2, bodyOffset=@(0, -1), color=#aab, fade=1, feather=1, dissipate=1s)
-        Streak(radius=0.2, bodyOffset=@(0, 1), color=#aab, fade=1, feather=1, dissipate=1s)
+        Streak(radius=0.2, bodyOffset=@(0, -1), color=#aab, fade=1, feather=1, dissipate=1s, layer=Layer:Underlay)
+        Streak(radius=0.2, bodyOffset=@(0, 1), color=#aab, fade=1, feather=1, dissipate=1s, layer=Layer:Underlay)
     }
 
     DecaySpeed(0.02)
