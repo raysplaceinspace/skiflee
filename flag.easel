@@ -34,20 +34,15 @@ pub fn flag.Flag(pos, poleNumber, side) {
                 FlagsAchieved += 1
                 SwingPole(mirror = hero.Pos.X >= Pos.X ? 1 : -1)
 
-                Spawn {
-                    use body=this, layer=Layer:Overlay
-                    Body(pos=hero.Pos, immovable=true)
-
-                    let start = Tick
-                    on Paint {
-                        let age = Tick - start
-                        let proportion = (age / 3s).Clamp(0, 1)
-                        TextSprite("+1", color=proportion.Mix(#0f4, #0840), radius=3, audience=owner, shadow=0.5)
-                        Pos += @(0, -0.1)
-                        
-                        if proportion >= 1 { Expire }
-                    }
-                }
+                hero.TextSpark(
+                    "+1",
+                    body=hero, heading=0, radius=3,
+                    color=#0f4, fade=#0840,
+                    stroke=0.1, strokeAlpha=0.5, shadow=0.5,
+                    velocity=@(0, -6),
+                    dissipate=5s, taper=0,
+                    audience=owner, layer=Layer:Overlay,
+                )
             }
         }
     }
